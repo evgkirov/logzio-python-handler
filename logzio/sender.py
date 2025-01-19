@@ -21,6 +21,13 @@ SHIPPER_HEADER = {"user-agent": f"{PACKAGE_NAME}-version-{PACKAGE_VERSION}-logs"
 MAX_BULK_SIZE_IN_BYTES = 1 * 1024 * 1024  # 1 MB
 
 
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return super().default(o)
+
+
 def backup_logs(logs, logger):
     timestamp = datetime.now().strftime('%d%m%Y-%H%M%S')
     logger.info(
@@ -72,7 +79,7 @@ class LogzioSender:
             self._initialize_sending_thread()
 
         # Queue lib is thread safe, no issue here
-        self.queue.put(json.dumps(logs_message))
+        self.queue.put(json.dumps(logs_message, cls=CustomJSONEncoder))
 
     def flush(self):
         self._flush_queue()
